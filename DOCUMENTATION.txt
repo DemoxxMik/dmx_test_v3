@@ -1,0 +1,134 @@
+
+DOCUMENTATION - SYSTÈME DE TRACKING CORPOREL DMX & VCV RACK
+===========================================================
+
+Ce projet permet de contrôler des lumières DMX et VCV Rack en utilisant les mouvements du corps captés par une webcam.
+
+FONCTIONNEMENT GLOBAL
+---------------------
+1. Le script Python (`pose_tracker.py`) analyse l'image de la webcam et détecte la tête et les mains.
+2. Il envoie les positions (X, Y) via OSC (port 7000) vers Processing.
+3. Processing (`dmx_test_v3.pde`) reçoit ces données :
+   - Il les utilise pour générer des visuels ou contrôler les lumières DMX.
+   - Il les retransmet via OSC (port 7001) vers VCV Rack pour le contrôle sonore.
+
+-----------------------------------------------------------
+1. PRÉREQUIS MATÉRIEL & LOGICIEL
+-----------------------------------------------------------
+
+MATÉRIEL :
+- Webcam USB (ou caméra intégrée).
+- Interface DMX USB (Enttec DMX USB Pro ou compatible) pour le contrôle lumière.
+- Câbles DMX et projecteurs (si utilisation DMX).
+
+LOGICIEL :
+- Python 3.x installé (cocher "Add Python to PATH" à l'installation).
+- Droidcam client sur windwows
+- Droidcam sur android
+- Processing 3 ou 4.
+- VCV Rack (optionnel, pour le son).
+
+-----------------------------------------------------------
+2. INSTALLATION
+-----------------------------------------------------------
+
+A. CONFIGURATION PYTHON (TRACKING)
+----------------------------------
+1. Ouvrez un terminal (Invite de commandes ou PowerShell).
+2. Naviguez vers le dossier `pose_tracker` :
+   cd "chemin\vers\dmx_test_v3\pose_tracker"
+   
+3. (Optionnel mais recommandé) Créez et activez un environnement virtuel :
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   
+   NOTE IMPORTANTE POUR POWERSHELL :
+   Si vous avez une erreur "l'exécution de scripts est désactivée" lors de l'activation du venv, lancez cette commande UNE SEULE FOIS pour autoriser les scripts signés (nécessaire sur Windows 10/11) :
+   
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+4. Installez les dépendances nécessaires (dans l'environnement virtuel) :
+   pip install -r requirements.txt
+   
+   (Ceci installera opencv-python, mediapipe et python-osc).
+
+B. CONFIGURATION PROCESSING
+---------------------------
+1. Lancez Processing.
+2. Allez dans le menu "Sketch" -> "Importer une librairie..." -> "Ajouter une librairie...".
+3. Cherchez et installez les librairies suivantes :
+   - oscP5 (pour la communication réseau).
+   - controlP5 (pour l'interface graphique).
+   - dmxP512 (pour le contrôle DMX - vérifiez si elle est déjà installée ou fournie).
+
+-----------------------------------------------------------
+3. UTILISATION
+-----------------------------------------------------------
+
+Lancer les programmes dans cet ordre de préférence :
+
+ÉTAPE 1 : VCV RACK (Optionnel)
+- Lancez VCV Rack.
+- Assurez-vous d'avoir un module OSC qui écoute sur le port 7001 (UDP).
+
+ÉTAPE 2 : PROCESSING
+- Ouvrez `dmx_test_v3.pde` dans Processing.
+- Appuyez sur le bouton "Exécuter" (lecture).
+- La fenêtre Processing doit s'ouvrir. Elle écoute désormais sur le port 7000.
+
+ÉTAPE 3 : PYTHON TRACKER
+- Ouvrez un terminal dans le dossier `pose_tracker`.
+- Lancez le script :
+  python pose_tracker.py
+
+- Une fenêtre vidéo doit s'ouvrir montrant le squelette détecté.
+- Les données sont maintenant envoyées à Processing et VCV Rack.
+
+COMMANDES CLAVIER (FENÊTRE PYTHON) :
+- 'q' : Quitter le programme.
+- 'h' : Afficher/Masquer l'aide à l'écran.
+
+-----------------------------------------------------------
+4. CONFIGURATION AVANCÉE
+-----------------------------------------------------------
+
+ACTIVER LE DMX :
+1. Dans Processing (`dmx_test_v3.pde`), modifiez la ligne 7 :
+   boolean DMXPRO = true; (au lieu de false)
+2. Vérifiez le port COM à la ligne 8 :
+   String DMXPRO_PORT = "COM5"; (Adaptez selon votre gestionnaire de périphériques Windows).
+
+CHANGER DE CAMÉRA :
+Si vous avez plusieurs caméras, vous pouvez spécifier l'index au lancement du script Python :
+python pose_tracker.py --camera 1
+
+OPTIONS DU SCRIPT PYTHON :
+python pose_tracker.py --help
+  --camera INT       Index de la caméra (défaut: 0)
+  --ip STRING        Adresse IP OSC (défaut: 127.0.0.1)
+  --port INT         Port OSC (défaut: 7000)
+  --no-preview       Désactiver la fenêtre vidéo pour gagner en performance
+
+-----------------------------------------------------------
+DÉPANNAGE
+-----------------------------------------------------------
+- "ModuleNotFoundError: No module named..." : Relancez l'installation des dépendances (pip install...).
+- "Error opening serial port..." dans Processing : Vérifiez que l'interface DMX est branchée et que le port COM est correct. Fermez tout autre logiciel utilisant le DMX.
+- Pas de mouvement : Vérifiez que la fenêtre Python est active et vous détecte bien. Vérifiez que les pare-feu n'aiment pas bloquer les ports 7000/7001 UDP.
+
+-----------------------------------------------------------
+5. TRANSFERT VERS UN AUTRE ORDINATEUR
+-----------------------------------------------------------
+
+IMPORTANT : NE COPIEZ PAS LE DOSSIER `.venv` !
+Les environnements virtuels Python sont spécifiques à l'ordinateur où ils ont été créés. Ils contiennent des chemins absolus qui ne fonctionneront pas ailleurs.
+
+Procédure pour déplacer le projet :
+1. Copiez tout le dossier du projet (`dmx_test_v3`) SAUF le sous-dossier `pose_tracker/.venv`.
+2. Sur le nouvel ordinateur, installez Python.
+3. Ouvrez un terminal dans `dmx_test_v3/pose_tracker`.
+4. Recréez l'environnement virtuel :
+   python -m venv .venv
+5. Activez-le (comme détaillé dans la section INSTALLATION).
+6. Réinstallez les dépendances :
+   pip install -r requirements.txt
